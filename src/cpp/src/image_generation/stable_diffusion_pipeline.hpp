@@ -510,10 +510,21 @@ public:
             const auto it = scheduler_step_result.find("denoised");
             denoised = it != scheduler_step_result.end() ? it->second : latent;
 
+            auto decode_start = std::chrono::steady_clock::now();
+            image = decode(denoised);
+            m_perf_metrics.vae_decoder_inference_duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - decode_start)
+                    .count();
+            std::string image_name = "image_" + std::to_string(inference_step) + ".png";
+            imwrite_single_image(image_name, image, true);
+            
+            std::cout << "unet time: " << infer_duration/1000 << " ms" <<std::endl;
+            std::cout << "decoder time: " << m_perf_metrics.vae_decoder_inference_duration << " ms" <<std::endl;
+
             if (callback && callback(inference_step, timesteps.size(), denoised)) {
                 auto step_ms = ov::genai::PerfMetrics::get_microsec(std::chrono::steady_clock::now() - step_start);
                 m_perf_metrics.raw_metrics.iteration_durations.emplace_back(MicroSeconds(step_ms));
-
+                std::cout << "one step time: " << step_ms/1000 << " ms" <<std::endl;
                 auto image = ov::Tensor(ov::element::u8, {});
                 m_perf_metrics.generate_duration =
                     std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - gen_start)
@@ -525,13 +536,13 @@ public:
             m_perf_metrics.raw_metrics.iteration_durations.emplace_back(MicroSeconds(step_ms));
 
 
-            auto decode_start = std::chrono::steady_clock::now();
-            image = decode(denoised);
-            std::string image_name = "image_" + std::to_string(inference_step) + ".png";
-            imwrite_single_image(image_name, image, true);
-            m_perf_metrics.vae_decoder_inference_duration =
-                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - decode_start)
-                    .count();
+            // auto decode_start = std::chrono::steady_clock::now();
+            // image = decode(denoised);
+            // std::string image_name = "image_" + std::to_string(inference_step) + ".png";
+            // imwrite_single_image(image_name, image, true);
+            // m_perf_metrics.vae_decoder_inference_duration =
+            //     std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - decode_start)
+            //         .count();
             m_perf_metrics.generate_duration =
                 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - gen_start).count();
 

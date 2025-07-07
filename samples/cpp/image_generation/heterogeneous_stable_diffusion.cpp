@@ -16,16 +16,16 @@ int32_t main(int32_t argc, char* argv[]) try {
 
     std::filesystem::path root_dir = models_path;
 
-    const int width = 512;
+    const int width = 960;
     const int height = 512;
     const int number_of_images_to_generate = 1;
     const int number_of_inference_steps_per_image = 20;
 
     // Set devices to command-line args if specified, otherwise default to CPU.
     // Note that these can be set to CPU, GPU, or NPU.
-    const std::string text_encoder_device = (argc > 3) ? argv[3] : "CPU";
-    const std::string unet_device = (argc > 4) ? argv[4] : "CPU";
-    const std::string vae_decoder_device = (argc > 5) ? argv[5] : "CPU";
+    const std::string text_encoder_device = (argc > 3) ? argv[3] : "GPU.0";
+    const std::string unet_device = (argc > 4) ? argv[4] : "NPU";
+    const std::string vae_decoder_device = (argc > 5) ? argv[5] : "GPU.0";
 
     std::cout << "text_encoder_device: " << text_encoder_device << std::endl;
     std::cout << "unet_device: " << unet_device << std::endl;
@@ -69,7 +69,10 @@ int32_t main(int32_t argc, char* argv[]) try {
                                          ov::genai::num_inference_steps(number_of_inference_steps_per_image),
                                          ov::genai::callback(progress_bar));
 
-        imwrite("image_" + std::to_string(imagei) + ".bmp", image, true);
+        // imwrite("image_" + std::to_string(imagei) + ".bmp", image, true);
+        // auto met = pipe.get_performance_metrics();
+        // std::cout << "vae time " << met.get_vae_decoder_infer_duration() <<  " ms" << std::endl;
+        // std::cout << "one step time " << met.get_generate_duration() <<  " ms" << std::endl;
     }
 
     return EXIT_SUCCESS;
