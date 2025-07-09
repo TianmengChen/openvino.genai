@@ -73,6 +73,10 @@ unsigned char info[40] = {
     0,  // #important colors
 };
 
+
+
+} // namespace
+
 void imwrite_single_image(const std::string& name, ov::Tensor image, bool convert_bgr2rgb) {
     const ov::Shape shape = image.get_shape();
     const size_t width = shape[2], height = shape[1], channels = shape[3];
@@ -130,9 +134,6 @@ void imwrite_single_image(const std::string& name, ov::Tensor image, bool conver
         output_file.write(reinterpret_cast<const char*>(pad), padSize);
     }
 }
-
-} // namespace
-
 
 void imwrite(const std::string& name, ov::Tensor images, bool convert_bgr2rgb) {
     const ov::Shape shape = images.get_shape();

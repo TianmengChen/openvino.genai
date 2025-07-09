@@ -16,16 +16,16 @@ int32_t main(int32_t argc, char* argv[]) try {
 
     std::filesystem::path root_dir = models_path;
 
-    const int width = 512;
+    const int width = 960;
     const int height = 512;
     const int number_of_images_to_generate = 1;
     const int number_of_inference_steps_per_image = 20;
 
     // Set devices to command-line args if specified, otherwise default to CPU.
     // Note that these can be set to CPU, GPU, or NPU.
-    const std::string text_encoder_device = (argc > 3) ? argv[3] : "CPU";
-    const std::string unet_device = (argc > 4) ? argv[4] : "CPU";
-    const std::string vae_decoder_device = (argc > 5) ? argv[5] : "CPU";
+    const std::string text_encoder_device = (argc > 3) ? argv[3] : "GPU.0";
+    const std::string unet_device = (argc > 4) ? argv[4] : "NPU";
+    const std::string vae_decoder_device = (argc > 5) ? argv[5] : "GPU.0";
 
     std::cout << "text_encoder_device: " << text_encoder_device << std::endl;
     std::cout << "unet_device: " << unet_device << std::endl;
@@ -58,6 +58,12 @@ int32_t main(int32_t argc, char* argv[]) try {
 
     pipe.compile(text_encoder_device, unet_device, vae_decoder_device, properties);
 
+    //If you want to save intermediate images during generation, use the following:
+    auto streamer = [&pipe](size_t step, size_t num_steps, ov::Tensor& latent) {
+        auto image = pipe.decode(latent);
+        imwrite_single_image("image_" + std::to_string(step) + ".png", image, true);
+        return false;
+    };
 
     //
     // Step 4: Use the Text2ImagePipeline to generate 'number_of_images_to_generate' images.
@@ -67,7 +73,7 @@ int32_t main(int32_t argc, char* argv[]) try {
 
         ov::Tensor image = pipe.generate(prompt,
                                          ov::genai::num_inference_steps(number_of_inference_steps_per_image),
-                                         ov::genai::callback(progress_bar));
+                                         ov::genai::callback(streamer));
 
         imwrite("image_" + std::to_string(imagei) + ".bmp", image, true);
     }
